@@ -29,9 +29,39 @@ body {
   font-family: 'Hind Siliguri', sans-serif;
   background: var(--bg); color: var(--text);
   min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  position: relative; overflow-x: hidden;
 }
+
+/* ---- Floating food background (ambient animation) ---- */
+.food-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.food-bg span {
+  position: absolute; bottom: -50px; font-size: 1.8rem; opacity: 0;
+  will-change: transform, opacity; animation: floatUp linear forwards;
+}
+@keyframes floatUp {
+  0%   { transform: translateY(0) rotate(0deg);       opacity: 0; }
+  10%  { opacity: 0.55; }
+  90%  { opacity: 0.55; }
+  100% { transform: translateY(-112vh) rotate(360deg); opacity: 0; }
+}
+
+/* ---- Confetti overlay ---- */
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+/* ---- Praise toast ---- */
+.praise-toast {
+  position: fixed; top: 72px; left: 50%; z-index: 60;
+  transform: translateX(-50%) translateY(-24px) scale(0.9);
+  background: linear-gradient(135deg, #06D6A0, #04bf8f); color: #fff;
+  padding: 12px 24px; border-radius: 99px; max-width: 88vw; text-align: center;
+  font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 1.05rem;
+  box-shadow: 0 10px 28px rgba(6,214,160,0.45); opacity: 0; pointer-events: none;
+  transition: opacity 0.35s, transform 0.35s;
+}
+.praise-toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+
 header {
-  width: 100%;
+  width: 100%; position: relative; z-index: 2;
   background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
   padding: 16px 20px 13px; text-align: center;
   box-shadow: 0 4px 20px rgba(255,107,53,0.3);
@@ -42,7 +72,7 @@ header h1 {
 }
 header p { color: rgba(255,255,255,0.85); font-size: 0.82rem; margin-top: 2px; font-weight: 600; }
 
-.main { width: 100%; max-width: 480px; padding: 14px 12px 24px; display: flex; flex-direction: column; gap: 13px; }
+.main { width: 100%; max-width: 480px; padding: 14px 12px 24px; display: flex; flex-direction: column; gap: 13px; position: relative; z-index: 2; }
 
 .camera-wrap {
   position: relative; border-radius: 22px; overflow: hidden;
@@ -103,6 +133,21 @@ header p { color: rgba(255,255,255,0.85); font-size: 0.82rem; margin-top: 2px; f
 .sinfo .slabel { font-size: 0.73rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; }
 .sinfo .sval   { font-size: 1rem; font-weight: 700; color: var(--text); margin-top: 2px; }
 
+/* ---- Reward / mascot card ---- */
+.reward-card {
+  background: linear-gradient(135deg, #FFF3DC, #FFE3BD);
+  border-radius: 18px; padding: 13px 16px; display: flex; align-items: center; gap: 14px;
+  border: 2px solid #FFE0B2; box-shadow: 0 3px 12px rgba(255,140,66,0.12);
+}
+.mascot { font-size: 2.7rem; line-height: 1; transition: transform 0.2s; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.12)); }
+.mascot.bounce { animation: mascotBounce 0.55s cubic-bezier(.3,1.4,.5,1); }
+@keyframes mascotBounce { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-14px) scale(1.18) rotate(-6deg)} 60%{transform:translateY(0) scale(0.95)} }
+.reward-info { flex: 1; }
+.reward-info .rlvl { font-family: 'Baloo 2', cursive; font-weight: 800; color: var(--orange); font-size: 0.95rem; }
+.reward-info .rsub { font-size: 0.7rem; color: #b07a3a; font-weight: 700; margin-top: 1px; }
+.energy-track { height: 11px; background: #fff; border-radius: 99px; overflow: hidden; margin-top: 6px; border: 1px solid #FFE0B2; }
+.energy-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--green), var(--yellow)); width: 0%; transition: width 0.45s ease; }
+
 .reminder-banner {
   background: linear-gradient(135deg, #EF476F, #ff6b8a);
   border-radius: 18px; padding: 16px 20px; text-align: center;
@@ -117,13 +162,13 @@ header p { color: rgba(255,255,255,0.85); font-size: 0.82rem; margin-top: 2px; f
 .rem-bn { font-family: 'Hind Siliguri', sans-serif; font-size: 1.2rem; font-weight: 700; line-height: 1.4; }
 .rem-sub { font-size: 0.8rem; opacity: 0.88; margin-top: 5px; }
 
-.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 9px; }
 .stat-box {
-  background: var(--card); border-radius: 14px; padding: 11px 8px;
+  background: var(--card); border-radius: 14px; padding: 11px 6px;
   text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 2px solid var(--border);
 }
-.stat-box .snum { font-family: 'Baloo 2', cursive; font-size: 1.55rem; font-weight: 800; color: var(--orange); line-height: 1; }
-.stat-box .slbl { font-size: 0.68rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+.stat-box .snum { font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 800; color: var(--orange); line-height: 1; }
+.stat-box .slbl { font-size: 0.62rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 3px; }
 
 .settings-card {
   background: var(--card); border-radius: 16px; padding: 16px 18px;
@@ -143,6 +188,14 @@ header p { color: rgba(255,255,255,0.85); font-size: 0.82rem; margin-top: 2px; f
 }
 .srow input[type="text"]:focus { border-color: var(--orange); }
 
+/* ---- Toggle switch ---- */
+.switch { position: relative; width: 46px; height: 26px; display: inline-block; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider2 { position: absolute; inset: 0; background: #ddd; border-radius: 99px; transition: 0.3s; cursor: pointer; }
+.slider2:before { content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.switch input:checked + .slider2 { background: var(--green); }
+.switch input:checked + .slider2:before { transform: translateX(20px); }
+
 .btn-row { display: flex; gap: 9px; }
 .btn {
   flex: 1; padding: 13px; border: none; border-radius: 13px;
@@ -154,15 +207,19 @@ header p { color: rgba(255,255,255,0.85); font-size: 0.82rem; margin-top: 2px; f
 .btn-stop  { background: linear-gradient(135deg, var(--red), #e0305a); color: #fff; box-shadow: 0 4px 16px rgba(239,71,111,0.3); display: none; }
 .btn-test  { background: linear-gradient(135deg, var(--yellow), #ffbb00); color: #5a3e00; box-shadow: 0 4px 16px rgba(255,209,102,0.25); }
 
-footer { text-align: center; color: var(--muted); font-size: 0.72rem; padding: 6px 20px 20px; font-weight: 600; }
+footer { text-align: center; color: var(--muted); font-size: 0.72rem; padding: 6px 20px 20px; font-weight: 600; position: relative; z-index: 2; }
 footer span { color: var(--orange); }
 </style>
 </head>
 <body>
 
+<div class="food-bg" id="foodBg"></div>
+<canvas id="confetti"></canvas>
+<div class="praise-toast" id="praiseToast"></div>
+
 <header>
   <h1>🍽️ খাও আমির! খাও!</h1>
-  <p>মুখের নড়াচড়া ট্র্যাক করে বাংলায় রিমাইন্ড করে</p>
+  <p>চিবানোর ছন্দ ট্র্যাক করে বাংলায় উৎসাহ দেয়</p>
 </header>
 
 <div class="main">
@@ -180,16 +237,25 @@ footer span { color: var(--orange); }
     </div>
   </div>
 
+  <div class="reward-card">
+    <div class="mascot" id="mascot">🌱</div>
+    <div class="reward-info">
+      <div class="rlvl" id="rewardLvl">লেভেল ১: চারা</div>
+      <div class="rsub" id="rewardSub">চিবালেই গাছ বড় হবে! 🌟</div>
+      <div class="energy-track"><div class="energy-fill" id="energyFill"></div></div>
+    </div>
+  </div>
+
   <div class="mouth-card">
     <div class="mouth-header">
-      <span>মুখের খোলার পরিমাণ (MAR)</span>
-      <span class="mval" id="mouthPct">0%</span>
+      <span>চিবানোর কার্যকলাপ 🦷</span>
+      <span class="mval" id="chewRate">0 /মিনিট</span>
     </div>
     <div class="mouth-track">
       <div class="mouth-fill" id="mouthFill"></div>
-      <div class="mouth-thresh-line" id="threshLine" style="left:25%"></div>
+      <div class="mouth-thresh-line" id="threshLine" style="left:30%"></div>
     </div>
-    <div class="mouth-labels"><span>বন্ধ</span><span>↑ সীমা</span><span>চিবানো ✓</span></div>
+    <div class="mouth-labels"><span>থেমে আছে</span><span>↑ সীমা</span><span>চিবাচ্ছে ✓</span></div>
   </div>
 
   <div class="status-bar">
@@ -209,6 +275,7 @@ footer span { color: var(--orange); }
 
   <div class="stats-row">
     <div class="stat-box"><div class="snum" id="stRem">0</div><div class="slbl">রিমাইন্ডার</div></div>
+    <div class="stat-box"><div class="snum" id="stChews">0</div><div class="slbl">মোট চিবানো</div></div>
     <div class="stat-box"><div class="snum" id="stPause">0s</div><div class="slbl">থামা সময়</div></div>
     <div class="stat-box"><div class="snum" id="stSess">0m</div><div class="slbl">সেশন</div></div>
   </div>
@@ -220,19 +287,27 @@ footer span { color: var(--orange); }
       <input type="text" id="childName" value="আমির আবদুল্লাহ" maxlength="40">
     </div>
     <div class="srow">
-      <label>থামার সীমা<span class="shint">কত সেকেন্ড থামলে রিমাইন্ড হবে</span></label>
+      <label>থামার সীমা<span class="shint">কত সেকেন্ড না চিবালে রিমাইন্ড হবে</span></label>
       <input type="range" id="pauseThresh" min="3" max="20" value="6" oninput="updateThreshUI()">
       <span class="sval" id="pauseVal">6s</span>
     </div>
     <div class="srow">
-      <label>মুখ সংবেদনশীলতা<span class="shint">ছোট নড়াচড়া বাদ দেবে</span></label>
-      <input type="range" id="mouthSens" min="5" max="45" value="18" oninput="updateSensUI()">
-      <span class="sval" id="sensVal">18%</span>
+      <label>চিবানোর সংবেদনশীলতা<span class="shint">বেশি = ছোট নড়াচড়াও ধরবে</span></label>
+      <input type="range" id="mouthSens" min="1" max="10" value="6" oninput="updateSensUI()">
+      <span class="sval" id="sensVal">6</span>
     </div>
     <div class="srow">
       <label>ভয়েস ভলিউম<span class="shint">আওয়াজের মাত্রা</span></label>
       <input type="range" id="voiceVol" min="1" max="10" value="10" oninput="document.getElementById('volVal').textContent=this.value">
       <span class="sval" id="volVal">10</span>
+    </div>
+    <div class="srow">
+      <label>মিউজিক ও বিট<span class="shint">মজার ব্যাকগ্রাউন্ড সুর</span></label>
+      <label class="switch"><input type="checkbox" id="musicToggle" checked onchange="onMusicToggle()"><span class="slider2"></span></label>
+    </div>
+    <div class="srow">
+      <label>সাউন্ড এফেক্ট<span class="shint">চিবানোর শব্দ ও পুরস্কার</span></label>
+      <label class="switch"><input type="checkbox" id="sfxToggle" checked><span class="slider2"></span></label>
     </div>
   </div>
 
@@ -248,332 +323,467 @@ footer span { color: var(--orange); }
 
 <script>
 // ============================================================
-// BANGLA DYNAMIC REMINDER SENTENCES — 20 varied phrases
+// PROCEDURAL BANGLA SENTENCE ENGINE
+// ------------------------------------------------------------
+// Instead of hard-coding 1000 lines, we combine fragments:
+//   main = <opener> + <action>,  sub = <reason>,  emoji = <emoji>
+// 25 openers × 25 actions × 30 reasons = 18,750 unique reminders.
 // ============================================================
+const OPENERS = [
+  '${name}!', 'ওহে ${name}!', 'এই যে ${name}!', 'শোনো ${name}!', '${name} সোনা!',
+  '${name} বাবু!', 'আরে ${name}!', '${name} মণি!', 'ও আমার ${name}!', '${name} বাবা!',
+  'এই ${name}!', 'হ্যালো ${name}!', 'দেখো ${name}!', '${name} সোনামণি!', 'ও ${name}!',
+  '${name}, শোনো তো!', 'প্রিয় ${name}!', 'উঠো ${name}!', 'চলো ${name}!', 'লক্ষ্মী ${name}!',
+  '${name} সোনাবাবু!', 'ও মিষ্টি ${name}!', '${name} রে!', 'এদিকে তাকাও ${name}!', 'জান ${name}!'
+];
+const ACTIONS = [
+  'একটা বড় কামড় দাও!', 'চামচ তুলে নাও এখনই!', 'মুখে দাও, চিবাও!', 'আরেক গ্রাস খাও তো!',
+  'খাওয়ায় মন দাও!', 'চিবাও, গিলো, আবার চিবাও!', 'পেট ভরে খাও!', 'থেমো না, খেতে থাকো!',
+  'আরেকটু খাও সোনা!', 'খাবার শেষ করো!', 'মুখটা চালাও তো!', 'এক চামচ মুখে নাও!',
+  'চটপট খেয়ে নাও!', 'ভালো করে চিবিয়ে খাও!', 'খাবার মুখে তোলো!', 'আর একটু বাকি, খাও!',
+  'জলদি জলদি খাও!', 'হাঁ করো, খাও!', 'চিবানো শুরু করো!', 'প্লেট খালি করো!',
+  'নাও, এক কামড় নাও!', 'আরেকটা চামচ, চলো!', 'মুখ ভরে নাও!', 'খাওয়া চালিয়ে যাও!', 'বড় করে হাঁ করো!'
+];
+const REASONS = [
+  'খেলে অনেক বড় হবে!', 'শক্তি পাবে, লম্বা হবে!', 'মা কত কষ্ট করে রান্না করেছেন!',
+  'খাবার ঠান্ডা হয়ে যাচ্ছে!', 'খেলে বুদ্ধি বাড়বে!', 'সুস্থ থাকতে হলে খেতে হবে!',
+  'খেলে পরে খেলতে যেতে পারবে!', 'ভালো করে খেলে মিষ্টি পাবে!', 'তোমার পেট এখনও খালি!',
+  'প্রতি গ্রাসে শক্তি লুকিয়ে আছে!', 'খাবার তোমার বন্ধু, খেয়ে নাও!', 'সবাই দেখছে তুমি কত ভালো খাও!',
+  'খেলে রোগ দূরে থাকবে!', 'তুমি পারবে, আমি জানি!', 'আর একটু, তারপর তুমি জিতবে!',
+  'হিরোরা সব খাবার শেষ করে!', 'খেলে স্বপ্নের মতো শক্তিশালী হবে!', 'দাঁত শক্ত হবে, হাড় মজবুত হবে!',
+  'খাবার নষ্ট করা ঠিক না সোনা!', 'একটু একটু করে সব শেষ হবে!', 'তুমি তো লক্ষ্মী ছেলে, খাও!',
+  'খেলে চোখ উজ্জ্বল হবে!', 'পেট ভরলে মন ভালো থাকে!', 'তাড়াতাড়ি খেলে কার্টুন দেখবে!',
+  'খাওয়া শেষ মানেই বড় পুরস্কার!', 'পুরো ${pauseSecs} সেকেন্ড থেমে ছিলে!', 'এটা ${count} নম্বর ডাক, এবার খাও!',
+  'গরম গরম খাওয়াই মজা!', 'এক চামচে এক ধাপ বড় হবে!', 'খেলে সুপারহিরো হয়ে যাবে!'
+];
+const EMOJIS = ["🍛","🥄","😋","💪","🍽️","⏰","🔔","🌟","🍬","👀","🌱","🍲","🎵","🔄","⚽","😊","🏃","📷","🔥","🥗","🍚","🌈","✨","🦸","🏆","🍎","🥦","🍗"];
+
+// Positive reinforcement (spoken on milestones)
+const PRAISE_MAIN = [
+  'দারুণ ${name}!', 'অসাধারণ ${name}!', 'বাহ্ ${name}!', 'সাবাশ ${name}!', 'দুর্দান্ত ${name}!',
+  'এইতো ${name}!', 'খুব ভালো ${name}!', 'তুমি তো চ্যাম্পিয়ন ${name}!', 'যা মজা ${name}!', 'ব্রাভো ${name}!'
+];
+const PRAISE_SUB = [
+  'তুমি ${chews} বার চিবিয়েছ!', 'এভাবেই খেতে থাকো!', 'তুমি তো খাওয়ার হিরো!',
+  'গাছটা আরও বড় হলো! 🌱', 'আরেকটু খেলেই পুরস্কার!', 'মা খুব খুশি হবেন!',
+  'তুমি সত্যিই দারুণ খাও!', 'আরও কামড় দাও, চলো!', 'তুমি আজ অনেক শক্তি পেলে!', 'কিপ ইট আপ! 💪'
+];
+const PRAISE_EMOJI = ["🌟","🎉","⭐","🏆","✨","🥳","🎊","💯","🦸","🍭"];
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function tpl(s, ctx) {
+  return s.replace(/\$\{name\}/g, ctx.name)
+          .replace(/\$\{pauseSecs\}/g, ctx.pauseSecs)
+          .replace(/\$\{count\}/g, ctx.count)
+          .replace(/\$\{chews\}/g, ctx.chews);
+}
+
 function getBanglaReminder(name, pauseSecs, count) {
-  const sets = [
-    [`${name}, খাচ্ছ না কেন? চামচ তুলো!`,
-     `ওই যে তোমার খাবার ঠান্ডা হয়ে যাচ্ছে!`, "🍛"],
-
-    [`${name}! এখনই একটা বড় কামড় দাও!`,
-     `মা রান্না করেছেন এত কষ্ট করে, নষ্ট করো না!`, "🥄"],
-
-    [`আরে ${name}! মুখে দাও, চিবাও!`,
-     `থেমে গেলে চলবে না, খাওয়া শেষ করো!`, "😋"],
-
-    [`${name} বাবু! খাওয়া শেষ করো আগে!`,
-     `খেলে শক্তি পাবে, লম্বা হবে, বুদ্ধি বাড়বে!`, "💪"],
-
-    [`ওহে ${name}! আবার ভুলে গেলে নাকি?`,
-     `চলো চলো, এক চামচ মুখে দাও এখনই!`, "🍽️"],
-
-    [`${name}! পুরো ${pauseSecs} সেকেন্ড থেমে আছ!`,
-     `আস্তে হলেও চলবে, কিন্তু থামলে একদম চলবে না!`, "⏰"],
-
-    [`হ্যালো ${name}? খাবার কিন্তু ডাকছে!`,
-     `তোমার পেট কিন্তু এখনও খালি আছে, মনে রেখো!`, "🔔"],
-
-    [`${name} সোনামণি! এক গ্রাস খাও তো!`,
-     `চাবানো শেষ হয়েছে? আরেকটু নাও পাতে!`, "🌟"],
-
-    [`উঠে পড়ো ${name}! মানে খাওয়ায় মনোযোগ দাও!`,
-     `এখন ভালো করে খেলে পরে মিষ্টি পাবে কিন্তু!`, "🍬"],
-
-    [`${name}! এটা ${count} নম্বর রিমাইন্ডার!`,
-     `আর থামা চলবে না, মনোযোগ দিয়ে চিবাও!`, "👀"],
-
-    [`আমির, খাবার খাও, নইলে বড় হবে না!`,
-     `প্রতিটা গ্রাস ভালো করে চিবিয়ে খেতে হয়!`, "🌱"],
-
-    [`এই ${name}, চোখ রাখো খাবারের দিকে!`,
-     `অন্যমনস্ক না হয়ে খাওয়ায় মন দাও!`, "👁️"],
-
-    [`${name} বাবা, পেট ভরাও আগে!`,
-     `খাবার এত সুন্দর রান্না, সব শেষ করতে হবে!`, "🍲"],
-
-    [`এক কামড়, দুই কামড়, ${name} কামড় দাও!`,
-     `এভাবে একটু একটু করে পুরো খাবার শেষ হবে!`, "🎵"],
-
-    [`${name}, মুখ খোলো! চিবাও! গিলো! আবার!`,
-     `এটাই খাওয়ার নিয়ম, থামলে চলবে না!`, "🔄"],
-
-    [`সোনা ${name}, আর মাত্র কয়েক চামচ!`,
-     `শেষ করলেই খেলতে যেতে পারবে!`, "⚽"],
-
-    [`${name} আমার! খাবার কি ভালো লাগছে না?`,
-     `যাই হোক, পেট ভরাতে হবে, খেতে থাকো!`, "😊"],
-
-    [`ওরে ${name}! এত ধীরে কেন আজ?`,
-     `একটু জোরে চিবাও, তাড়াতাড়ি শেষ হবে!`, "🏃"],
-
-    [`${name}, দেখো আমি তোমাকে দেখছি!`,
-     `ক্যামেরা বলছে তুমি ${pauseSecs} সেকেন্ড থেমে আছ!`, "📷"],
-
-    [`জলদি করো ${name}, খাবার ঠান্ডা হচ্ছে!`,
-     `গরম গরম খাওয়াই ভালো, এখনই খাও!`, "🔥"],
-  ];
-  return sets[Math.floor(Math.random() * sets.length)];
+  const ctx = { name, pauseSecs, count, chews: '' };
+  return [ tpl(rand(OPENERS) + ' ' + rand(ACTIONS), ctx), tpl(rand(REASONS), ctx), rand(EMOJIS) ];
+}
+function getPraise(name, chews) {
+  const ctx = { name, chews, pauseSecs: '', count: '' };
+  return [ tpl(rand(PRAISE_MAIN), ctx), tpl(rand(PRAISE_SUB), ctx), rand(PRAISE_EMOJI) ];
 }
 
 // ============================================================
-// MOUTH LANDMARK INDICES (MediaPipe 468-point)
+// MOUTH LANDMARK INDICES (MediaPipe FaceMesh, refineLandmarks)
 // ============================================================
-const MOUTH_TOP    = 13;
-const MOUTH_BOTTOM = 14;
-const MOUTH_LEFT   = 61;
-const MOUTH_RIGHT  = 291;
-
-// Outer lip loop for drawing
+const LIP_PAIRS = [ [82, 87], [13, 14], [312, 317] ];  // inner vertical pairs (left, center, right)
+const MOUTH_L = 78, MOUTH_R = 308;                       // inner corners → width
+const CHEEK_L = 234, CHEEK_R = 454;                      // face size / distance
 const OUTER_LIPS = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146,61];
 const INNER_LIPS = [78,191,80,81,82,13,312,311,310,415,308,324,318,402,317,14,87,178,88,95,78];
 
 // ============================================================
 // STATE
 // ============================================================
-let faceMesh     = null;
-let mpCamera     = null;
-let stream       = null;
-let isRunning    = false;
+let faceMesh = null, mpCamera = null, stream = null, isRunning = false;
 
-// Smoothing
-let marHistory   = [];
-const SMOOTH_N   = 8;   // frames to average
-// Noise floor: changes below this MAR delta are ignored
-const MAR_NOISE  = 0.01;
-let lastStableMAR = 0;
-
-let pauseStart     = null;
-let lastReminderAt = 0;
-let reminderCount  = 0;
-let sessionSecs    = 0;
-let sessionTimer   = null;
-let speaking       = false;
+const CHEW_WIN_MS = 2200, BASE_WIN_MS = 6000;
+let marShort = [], marLong = [], med3 = [];
+let baselineMAR = 0.05, lastEatAt = 0, pauseStart = null;
+let totalChews = 0, lastChewMark = 0;
+let lastReminderAt = 0, reminderCount = 0, sessionSecs = 0, sessionTimer = null, speaking = false;
 
 const video      = document.getElementById('video');
 const faceCanvas = document.getElementById('faceCanvas');
 const fctx       = faceCanvas.getContext('2d');
 
 // ============================================================
-// MOUTH ASPECT RATIO
+// MOUTH ASPECT RATIO (aspect-corrected, multi-point, distance-invariant)
 // ============================================================
-function getMAR(lm) {
-  const top    = lm[MOUTH_TOP];
-  const bottom = lm[MOUTH_BOTTOM];
-  const left   = lm[MOUTH_LEFT];
-  const right  = lm[MOUTH_RIGHT];
-  const vert   = Math.hypot(bottom.x - top.x,   bottom.y - top.y);
-  const horiz  = Math.hypot(right.x  - left.x,  right.y  - left.y);
-  return horiz > 0.001 ? vert / horiz : 0;
+function dist(a, b, aspect) {
+  const dx = (a.x - b.x) * aspect;  // x is normalized to width → convert to y-units
+  const dy = (a.y - b.y);
+  return Math.hypot(dx, dy);
+}
+function getMAR(lm, aspect) {
+  const left = lm[MOUTH_L], right = lm[MOUTH_R];
+  if (!left || !right) return 0;
+  const width = dist(left, right, aspect);
+  if (width < 1e-4) return 0;
+  let vert = 0, n = 0;
+  for (const [t, b] of LIP_PAIRS) {
+    const pt = lm[t], pb = lm[b];
+    if (!pt || !pb) continue;
+    vert += dist(pt, pb, aspect); n++;
+  }
+  return n ? (vert / n) / width : 0;
+}
+function despike(raw) {
+  med3.push(raw);
+  if (med3.length > 3) med3.shift();
+  const s = [...med3].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
 }
 
 // ============================================================
-// SMOOTH + DISCARD TINY NOISE
+// CHEWING DETECTION — rhythmic jaw oscillation, not static openness
 // ============================================================
-function smoothedMAR(raw) {
-  marHistory.push(raw);
-  if (marHistory.length > SMOOTH_N) marHistory.shift();
-  const avg = marHistory.reduce((a, b) => a + b, 0) / marHistory.length;
-  // Hysteresis: only update stable reading if delta is significant
-  if (Math.abs(avg - lastStableMAR) > MAR_NOISE) {
-    lastStableMAR = avg;
+function analyzeChewing(now, minAmp) {
+  marShort = marShort.filter(s => now - s.t <= CHEW_WIN_MS);
+  marLong  = marLong.filter(s => now - s.t <= BASE_WIN_MS);
+
+  if (marLong.length >= 10) {
+    const sorted = marLong.map(s => s.mar).sort((a, b) => a - b);
+    baselineMAR = sorted[Math.floor(sorted.length * 0.25)];
   }
-  return lastStableMAR;
+  if (marShort.length < 6) return { chews: 0, amp: 0, active: false };
+
+  const vals = marShort.map(s => s.mar);
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  let mn = Infinity, mx = -Infinity;
+  for (const v of vals) { if (v < mn) mn = v; if (v > mx) mx = v; }
+  const amp = mx - mn;
+
+  const hy = Math.max(minAmp, amp * 0.30) / 2;
+  let state = 0, chews = 0;
+  for (const v of vals) {
+    if (state <= 0 && v > mean + hy) { state = 1; chews++; }
+    else if (state >= 0 && v < mean - hy) { state = -1; }
+  }
+  const bigBite = vals[vals.length - 1] > baselineMAR + 0.22;
+  return { chews, amp, active: (chews >= 1 && amp >= minAmp) || bigBite };
 }
 
 // ============================================================
 // DRAW MOUTH OVERLAY
 // ============================================================
-function drawMouth(lm, W, H, mar, isChewing) {
-  faceCanvas.width  = W;
-  faceCanvas.height = H;
+function drawMouth(lm, W, H, isEating) {
+  faceCanvas.width = W; faceCanvas.height = H;
   fctx.clearRect(0, 0, W, H);
+  const color = isEating ? '#06D6A0' : '#EF476F';
+  const fill  = isEating ? 'rgba(6,214,160,0.18)' : 'rgba(239,71,111,0.15)';
 
-  const color = isChewing ? '#06D6A0' : '#EF476F';
-  const fill  = isChewing ? 'rgba(6,214,160,0.18)' : 'rgba(239,71,111,0.15)';
-
-  // Outer lips
   fctx.beginPath();
-  OUTER_LIPS.forEach((idx, i) => {
-    const p = lm[idx]; if (!p) return;
-    i === 0 ? fctx.moveTo(p.x * W, p.y * H) : fctx.lineTo(p.x * W, p.y * H);
-  });
-  fctx.closePath();
-  fctx.fillStyle   = fill;
-  fctx.strokeStyle = color;
-  fctx.lineWidth   = 2;
-  fctx.fill();
-  fctx.stroke();
+  OUTER_LIPS.forEach((idx, i) => { const p = lm[idx]; if (!p) return; i === 0 ? fctx.moveTo(p.x*W,p.y*H) : fctx.lineTo(p.x*W,p.y*H); });
+  fctx.closePath(); fctx.fillStyle = fill; fctx.strokeStyle = color; fctx.lineWidth = 2; fctx.fill(); fctx.stroke();
 
-  // Inner lips
   fctx.beginPath();
-  INNER_LIPS.forEach((idx, i) => {
-    const p = lm[idx]; if (!p) return;
-    i === 0 ? fctx.moveTo(p.x * W, p.y * H) : fctx.lineTo(p.x * W, p.y * H);
-  });
-  fctx.closePath();
-  fctx.strokeStyle = color;
-  fctx.lineWidth   = 1.5;
-  fctx.stroke();
+  INNER_LIPS.forEach((idx, i) => { const p = lm[idx]; if (!p) return; i === 0 ? fctx.moveTo(p.x*W,p.y*H) : fctx.lineTo(p.x*W,p.y*H); });
+  fctx.closePath(); fctx.strokeStyle = color; fctx.lineWidth = 1.5; fctx.stroke();
 
-  // Corner & top/bottom dots
-  [MOUTH_TOP, MOUTH_BOTTOM, MOUTH_LEFT, MOUTH_RIGHT].forEach(idx => {
+  [MOUTH_L, MOUTH_R, 13, 14].forEach(idx => {
     const p = lm[idx]; if (!p) return;
-    fctx.beginPath();
-    fctx.arc(p.x * W, p.y * H, 4, 0, Math.PI * 2);
-    fctx.fillStyle   = '#fff';
-    fctx.strokeStyle = color;
-    fctx.lineWidth   = 2;
-    fctx.fill(); fctx.stroke();
+    fctx.beginPath(); fctx.arc(p.x*W, p.y*H, 4, 0, Math.PI*2);
+    fctx.fillStyle = '#fff'; fctx.strokeStyle = color; fctx.lineWidth = 2; fctx.fill(); fctx.stroke();
   });
 
-  // MAR label near mouth
-  const midX = lm[MOUTH_BOTTOM] ? lm[MOUTH_BOTTOM].x * W : W / 2;
-  const midY = lm[MOUTH_BOTTOM] ? lm[MOUTH_BOTTOM].y * H + 18 : H / 2;
-  fctx.font      = 'bold 11px sans-serif';
-  fctx.fillStyle = color;
-  fctx.textAlign = 'center';
-  fctx.fillText(`MAR: ${(mar * 100).toFixed(0)}%`, midX, midY);
+  const a = lm[14];
+  fctx.font = 'bold 11px sans-serif'; fctx.fillStyle = color; fctx.textAlign = 'center';
+  fctx.fillText(isEating ? 'চিবাচ্ছে ✓' : 'থেমে আছে', a ? a.x*W : W/2, a ? a.y*H + 18 : H/2);
 }
 
 // ============================================================
-// BANGLA VOICE
+// WEB AUDIO — synthesized music, beat & sound effects (no files)
 // ============================================================
-function speak(text) {
+let audioCtx = null, musicTimer = null, musicStep = 0;
+let musicOn = true, sfxOn = true;
+const MELODY = [523.25, 659.25, 783.99, 659.25, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25];
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function tone(freq, dur, type, vol, when) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime + (when || 0);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  o.connect(g); g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.start(t); o.stop(t + dur + 0.03);
+}
+function playChomp() {
+  if (!sfxOn || !audioCtx) return;          // two quick low "nom nom" thuds
+  tone(150, 0.07, 'triangle', 0.16, 0);
+  tone(110, 0.08, 'triangle', 0.14, 0.06);
+}
+function playReward() {
+  if (!sfxOn || !audioCtx) return;          // happy ascending arpeggio
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.18, 'square', 0.12, i * 0.11));
+}
+function musicTick() {
+  if (!musicOn || !audioCtx) return;
+  const f = MELODY[musicStep % MELODY.length];
+  tone(f, 0.30, 'triangle', 0.045, 0);              // melody
+  if (musicStep % 2 === 0) tone(f / 2, 0.34, 'sine', 0.035, 0);  // soft bass
+  if (musicStep % 4 === 0) tone(90, 0.10, 'square', 0.05, 0);    // kick / beat
+  musicStep++;
+}
+function startMusic() { ensureAudio(); if (!musicTimer && musicOn) musicTimer = setInterval(musicTick, 360); }
+function stopMusic()  { if (musicTimer) { clearInterval(musicTimer); musicTimer = null; } }
+function onMusicToggle() {
+  musicOn = document.getElementById('musicToggle').checked;
+  if (isRunning && musicOn) startMusic(); else stopMusic();
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+const confCanvas = document.getElementById('confetti');
+const cctx = confCanvas.getContext('2d');
+let confParticles = [], confRAF = null;
+const CONF_COLORS = ['#FF6B35','#FFD166','#06D6A0','#EF476F','#118AB2','#ff9b54'];
+
+function sizeConfetti() { confCanvas.width = window.innerWidth; confCanvas.height = window.innerHeight; }
+window.addEventListener('resize', sizeConfetti);
+
+function burstConfetti(n) {
+  sizeConfetti();
+  for (let i = 0; i < (n || 60); i++) {
+    confParticles.push({
+      x: Math.random() * confCanvas.width,
+      y: -20 - Math.random() * confCanvas.height * 0.3,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 4,
+      size: 5 + Math.random() * 7,
+      color: rand(CONF_COLORS),
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.3
+    });
+  }
+  if (!confRAF) confLoop();
+}
+function confLoop() {
+  cctx.clearRect(0, 0, confCanvas.width, confCanvas.height);
+  confParticles = confParticles.filter(p => p.y < confCanvas.height + 30);
+  for (const p of confParticles) {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.07; p.rot += p.vr;
+    cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+    cctx.fillStyle = p.color; cctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
+    cctx.restore();
+  }
+  if (confParticles.length) confRAF = requestAnimationFrame(confLoop);
+  else { cctx.clearRect(0, 0, confCanvas.width, confCanvas.height); confRAF = null; }
+}
+
+// ============================================================
+// FLOATING FOOD BACKGROUND (ambient)
+// ============================================================
+const FOODS = ['🍎','🍌','🍚','🍛','🥕','🍇','🥦','🍪','🍗','🥛','🍊','🍉','🥗','🍅','🌽','🍙','🍌','🧀','🍞','🍠'];
+const foodBg = document.getElementById('foodBg');
+function spawnFood() {
+  const s = document.createElement('span');
+  s.textContent = rand(FOODS);
+  s.style.left = Math.random() * 100 + 'vw';
+  s.style.fontSize = (1.2 + Math.random() * 1.2) + 'rem';
+  const dur = 7 + Math.random() * 7;
+  s.style.animationDuration = dur + 's';
+  foodBg.appendChild(s);
+  setTimeout(() => s.remove(), dur * 1000 + 200);
+}
+setInterval(spawnFood, 1400);
+for (let i = 0; i < 5; i++) setTimeout(spawnFood, i * 400);
+
+// ============================================================
+// MASCOT / REWARD SYSTEM — chews grow a plant into a trophy
+// ============================================================
+const LEVELS = [
+  { emoji: '🌱', name: 'চারা',        need: 10  },
+  { emoji: '🌿', name: 'ছোট গাছ',     need: 25  },
+  { emoji: '🪴', name: 'টবগাছ',       need: 50  },
+  { emoji: '🌳', name: 'বড় গাছ',      need: 100 },
+  { emoji: '🏆', name: 'চ্যাম্পিয়ন',  need: Infinity }
+];
+function updateReward() {
+  let prev = 0, idx = 0;
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (totalChews < LEVELS[i].need) { idx = i; break; }
+    prev = LEVELS[i].need; idx = i;
+  }
+  const lv = LEVELS[idx];
+  const pct = lv.need === Infinity ? 100 : Math.min(100, ((totalChews - prev) / (lv.need - prev)) * 100);
+  document.getElementById('mascot').textContent     = lv.emoji;
+  document.getElementById('rewardLvl').textContent  = `লেভেল ${idx + 1}: ${lv.name}`;
+  document.getElementById('energyFill').style.width = pct + '%';
+}
+function bounceMascot() {
+  const m = document.getElementById('mascot');
+  m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce');
+}
+function showPraiseToast(text) {
+  const t = document.getElementById('praiseToast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(showPraiseToast._t);
+  showPraiseToast._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+// Called each time a real chew is counted.
+function onChewCounted() {
+  playChomp();
+  bounceMascot();
+  updateReward();
+  if (totalChews > 0 && totalChews % 10 === 0) celebrate();
+}
+function celebrate() {
+  burstConfetti(80);
+  playReward();
+  const name = document.getElementById('childName').value.trim() || 'আমির';
+  const [m, s, e] = getPraise(name, totalChews);
+  showPraiseToast(`${e} ${m} ${s}`);
+  speak(m + ' ' + s, { pitch: 1.35, rate: 0.98 });  // bright, happy praise voice
+}
+
+// ============================================================
+// RANDOMIZED BANGLA VOICE
+// ============================================================
+function pickVoice() {
+  const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  let pool = voices.filter(v => /^bn/i.test(v.lang));
+  if (!pool.length) pool = voices.filter(v => /^hi/i.test(v.lang));
+  if (!pool.length) pool = voices;
+  return pool.length ? rand(pool) : null;
+}
+function speak(text, opts) {
   if (!window.speechSynthesis) return;
+  opts = opts || {};
   window.speechSynthesis.cancel();
   speaking = true;
-  const vol = parseFloat(document.getElementById('voiceVol').value) / 10;
   const utt = new SpeechSynthesisUtterance(text);
-  utt.volume = vol;
-  utt.rate   = 0.85;
-  utt.pitch  = 1.1;
-
-  const voices = window.speechSynthesis.getVoices();
-  // Preference order: bn-BD > bn-IN > bn > hi (closest fallback)
-  const preferred = voices.find(v => v.lang === 'bn-BD') ||
-                    voices.find(v => v.lang === 'bn-IN') ||
-                    voices.find(v => v.lang.startsWith('bn')) ||
-                    voices.find(v => v.lang.startsWith('hi')) ||
-                    null;
-  if (preferred) { utt.voice = preferred; utt.lang = preferred.lang; }
-  else { utt.lang = 'bn-BD'; }
-
-  utt.onend   = () => { speaking = false; };
-  utt.onerror = () => { speaking = false; };
+  utt.volume = parseFloat(document.getElementById('voiceVol').value) / 10;
+  // Randomize delivery so it never sounds robotic / repetitive.
+  utt.pitch = opts.pitch != null ? opts.pitch : (0.95 + Math.random() * 0.45);  // 0.95–1.40
+  utt.rate  = opts.rate  != null ? opts.rate  : (0.82 + Math.random() * 0.26);  // 0.82–1.08
+  const v = pickVoice();
+  if (v) { utt.voice = v; utt.lang = v.lang; } else { utt.lang = 'bn-BD'; }
+  utt.onend = utt.onerror = () => { speaking = false; };
   window.speechSynthesis.speak(utt);
 }
-
 function testVoice() {
-  const name    = document.getElementById('childName').value.trim() || 'আমির';
-  const [m, s]  = getBanglaReminder(name, 5, 1);
+  ensureAudio();
+  const name = document.getElementById('childName').value.trim() || 'আমির';
+  const [m, s] = getBanglaReminder(name, 5, 1);
   speak(m + ' ' + s);
 }
 
 // ============================================================
-// UI
+// UI HELPERS
 // ============================================================
 function setStatus(cls, text, emoji) {
-  document.getElementById('sdot').className     = 'sdot ' + (cls || '');
-  document.getElementById('sval').textContent   = text;
+  document.getElementById('sdot').className        = 'sdot ' + (cls || '');
+  document.getElementById('sval').textContent      = text;
   document.getElementById('moodEmoji').textContent = emoji;
 }
-
-function setFaceBadge(found) {
+function setFaceBadge(found, label) {
   document.getElementById('faceBadge').classList.add('show');
-  document.getElementById('faceDot').className   = 'face-dot ' + (found ? 'found' : 'lost');
-  document.getElementById('faceLabel').textContent = found ? 'মুখ পাওয়া গেছে ✓' : 'মুখ দেখা যাচ্ছে না';
+  document.getElementById('faceDot').className     = 'face-dot ' + (found ? 'found' : 'lost');
+  document.getElementById('faceLabel').textContent = label || (found ? 'মুখ পাওয়া গেছে ✓' : 'মুখ দেখা যাচ্ছে না');
 }
-
 function showReminder(main, sub, emoji) {
   document.getElementById('remEmoji').textContent = emoji;
   document.getElementById('remText').textContent  = main;
   document.getElementById('remSub').textContent   = sub;
   const b = document.getElementById('reminderBanner');
-  b.classList.remove('show');
-  void b.offsetWidth;
-  b.classList.add('show');
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
   setTimeout(() => b.classList.remove('show'), 6000);
 }
-
-function updateMouthBar(mar) {
-  const pct = Math.min(100, mar * 100 * 2.5); // scale 0..0.4 → 0..100%
-  document.getElementById('mouthFill').style.width = pct + '%';
-  document.getElementById('mouthPct').textContent  = (mar * 100).toFixed(1) + '%';
+function updateActivityBar(chewsPerMin) {
+  document.getElementById('mouthFill').style.width = Math.min(100, (chewsPerMin / 90) * 100) + '%';
+  document.getElementById('chewRate').textContent  = Math.round(chewsPerMin) + ' /মিনিট';
 }
-
 function updateStats(pauseSecs) {
   document.getElementById('stRem').textContent   = reminderCount;
+  document.getElementById('stChews').textContent = totalChews;
   document.getElementById('stPause').textContent = pauseSecs > 0 ? pauseSecs + 's' : '0s';
   document.getElementById('stSess').textContent  = Math.floor(sessionSecs / 60) + 'm';
 }
-
-function updateThreshUI() {
-  document.getElementById('pauseVal').textContent = document.getElementById('pauseThresh').value + 's';
-}
-
-function updateSensUI() {
-  const v = parseInt(document.getElementById('mouthSens').value);
-  document.getElementById('sensVal').textContent = v + '%';
-  // The threshold line maps: sens 5-45 → position on bar
-  // bar shows MAR*100*2.5 scale, so sens% on bar = (sens/100 * 100 * 2.5) = sens*2.5 capped 100
-  const barPct = Math.min(100, v * 2.5);
-  document.getElementById('threshLine').style.left = barPct + '%';
-}
+function updateThreshUI() { document.getElementById('pauseVal').textContent = document.getElementById('pauseThresh').value + 's'; }
+function updateSensUI()   { document.getElementById('sensVal').textContent  = document.getElementById('mouthSens').value; }
+function sensToMinAmp()   { return 0.060 - parseInt(document.getElementById('mouthSens').value) * 0.0045; }
 
 // ============================================================
 // FACE MESH CALLBACK
 // ============================================================
 function onFaceResults(results) {
   if (!isRunning) return;
+  const W = video.videoWidth || 640, H = video.videoHeight || 480;
+  const aspect = W / H, now = Date.now();
 
-  const W = video.videoWidth  || 640;
-  const H = video.videoHeight || 480;
-
-  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+  const faces = results.multiFaceLandmarks;
+  if (!faces || faces.length === 0) {
     setFaceBadge(false);
-    faceCanvas.width = W; faceCanvas.height = H;
-    fctx.clearRect(0, 0, W, H);
-    setStatus('warn', 'মুখ দেখা যাচ্ছে না — কাছে আসো', '🔍');
-    pauseStart = null;
+    faceCanvas.width = W; faceCanvas.height = H; fctx.clearRect(0, 0, W, H);
+    setStatus('warn', 'মুখ দেখা যাচ্ছে না — ক্যামেরার সামনে এসো', '🔍');
+    pauseStart = null; lastEatAt = now; marShort = []; marLong = []; med3 = [];
+    return;
+  }
+
+  // Track the largest (closest) face if more than one appears.
+  let lm = faces[0], best = -1;
+  for (const f of faces) {
+    const w = Math.abs(f[CHEEK_R].x - f[CHEEK_L].x);
+    if (w > best) { best = w; lm = f; }
+  }
+
+  if (Math.abs(lm[CHEEK_R].x - lm[CHEEK_L].x) < 0.14) {
+    setFaceBadge(true, 'একটু কাছে এসো 👈');
+    drawMouth(lm, W, H, false);
+    setStatus('warn', 'মুখ অনেক দূরে — কাছে এসো', '🔭');
+    pauseStart = null; lastEatAt = now;
     return;
   }
 
   setFaceBadge(true);
-  const lm  = results.multiFaceLandmarks[0];
-  const raw = getMAR(lm);
-  const mar = smoothedMAR(raw);       // noise-filtered stable value
+  const raw = despike(getMAR(lm, aspect));
+  marShort.push({ t: now, mar: raw });
+  marLong.push({ t: now, mar: raw });
 
-  const sensRaw  = parseInt(document.getElementById('mouthSens').value);
-  const sensMAR  = sensRaw / 100;     // convert % to MAR scale
-  const isChewing = mar >= sensMAR;
+  const { chews, active } = analyzeChewing(now, sensToMinAmp());
+  updateActivityBar((chews / (CHEW_WIN_MS / 1000)) * 60);
 
-  drawMouth(lm, W, H, mar, isChewing);
-  updateMouthBar(mar);
+  if (active && chews > 0 && now - lastChewMark > 350) {
+    totalChews++; lastChewMark = now;
+    onChewCounted();
+  }
 
+  drawMouth(lm, W, H, active);
   const thresh = parseInt(document.getElementById('pauseThresh').value);
 
-  if (isChewing) {
-    pauseStart = null;
-    setStatus('active', 'চিবানো হচ্ছে 😋', '😋');
+  if (active) {
+    lastEatAt = now; pauseStart = null;
+    setStatus('active', 'চিবাচ্ছে 😋', '😋');
     updateStats(0);
   } else {
-    if (!pauseStart) pauseStart = Date.now();
-    const pausedSecs = Math.floor((Date.now() - pauseStart) / 1000);
-    setStatus('warn', `${pausedSecs}s ধরে মুখ বন্ধ`, '😐');
+    if (!pauseStart) pauseStart = now;
+    const pausedSecs = Math.floor((now - pauseStart) / 1000);
+    setStatus('warn', `${pausedSecs}s ধরে চিবাচ্ছে না`, '😐');
     updateStats(pausedSecs);
-
-    if (pausedSecs >= thresh) {
-      const now      = Date.now();
-      const cooldown = 10000;
-      if (now - lastReminderAt > cooldown) {
-        lastReminderAt = now;
-        reminderCount++;
-        const name      = document.getElementById('childName').value.trim() || 'আমির';
-        const [m, s, e] = getBanglaReminder(name, pausedSecs, reminderCount);
-        speak(m + ' ' + s);
-        showReminder(m, s, e);
-        setStatus('alert', `রিমাইন্ড দেওয়া হলো! (${reminderCount}×)`, '🔔');
-      }
+    if (pausedSecs >= thresh && now - lastReminderAt > 10000) {
+      lastReminderAt = now; reminderCount++;
+      const name = document.getElementById('childName').value.trim() || 'আমির';
+      const [m, s, e] = getBanglaReminder(name, pausedSecs, reminderCount);
+      speak(m + ' ' + s);
+      showReminder(m, s, e);
+      setStatus('alert', `রিমাইন্ড দেওয়া হলো! (${reminderCount}×)`, '🔔');
     }
   }
 }
@@ -583,9 +793,9 @@ function onFaceResults(results) {
 // ============================================================
 async function startMonitoring() {
   try {
+    ensureAudio();  // unlock audio on user gesture
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: false
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false
     });
     video.srcObject = stream;
     await video.play();
@@ -594,16 +804,13 @@ async function startMonitoring() {
     document.getElementById('btnStart').style.display = 'none';
     document.getElementById('btnStop').style.display  = 'flex';
 
-    isRunning = true; pauseStart = null; reminderCount = 0;
-    sessionSecs = 0; marHistory = []; lastStableMAR = 0;
+    isRunning = true; pauseStart = null; reminderCount = 0; sessionSecs = 0;
+    totalChews = 0; lastChewMark = 0; lastReminderAt = 0; lastEatAt = Date.now();
+    marShort = []; marLong = []; med3 = []; baselineMAR = 0.05;
+    updateReward(); updateStats(0);
 
-    faceMesh = new FaceMesh({
-      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
-    });
-    faceMesh.setOptions({
-      maxNumFaces: 1, refineLandmarks: true,
-      minDetectionConfidence: 0.65, minTrackingConfidence: 0.65
-    });
+    faceMesh = new FaceMesh({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
+    faceMesh.setOptions({ maxNumFaces: 2, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
     faceMesh.onResults(onFaceResults);
 
     mpCamera = new Camera(video, {
@@ -617,10 +824,13 @@ async function startMonitoring() {
       updateStats(pauseStart ? Math.floor((Date.now() - pauseStart) / 1000) : 0);
     }, 1000);
 
+    musicOn = document.getElementById('musicToggle').checked;
+    sfxOn   = document.getElementById('sfxToggle').checked;
+    if (musicOn) startMusic();
+
     setStatus('active', 'মনিটরিং চলছে...', '👀');
     const name = document.getElementById('childName').value.trim() || 'আমির';
     setTimeout(() => speak(`ঠিক আছে! ${name}, আমি এখন তোমাকে দেখছি। ভালো করে চিবিয়ে খাও!`), 800);
-
   } catch (err) {
     alert('ক্যামেরার অনুমতি দরকার!\n\nঅনুগ্রহ করে ক্যামেরা অ্যাক্সেস দিন।\n\n' + err.message);
   }
@@ -628,10 +838,11 @@ async function startMonitoring() {
 
 function stopMonitoring() {
   isRunning = false;
-  if (mpCamera)  { mpCamera.stop();  mpCamera  = null; }
-  if (faceMesh)  { faceMesh.close(); faceMesh  = null; }
-  if (stream)    { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (mpCamera) { mpCamera.stop(); mpCamera = null; }
+  if (faceMesh) { faceMesh.close(); faceMesh = null; }
+  if (stream)   { stream.getTracks().forEach(t => t.stop()); stream = null; }
   clearInterval(sessionTimer);
+  stopMusic();
   video.srcObject = null;
   fctx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
   document.getElementById('overlay').style.display  = 'flex';
@@ -640,7 +851,7 @@ function stopMonitoring() {
   document.getElementById('faceBadge').classList.remove('show');
   document.getElementById('reminderBanner').classList.remove('show');
   setStatus('', 'থামানো হয়েছে', '😴');
-  updateMouthBar(0);
+  updateActivityBar(0);
   if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
@@ -649,7 +860,7 @@ window.speechSynthesis && window.speechSynthesis.getVoices();
 window.speechSynthesis && (window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices());
 
 // Init UI
-updateThreshUI(); updateSensUI();
+updateThreshUI(); updateSensUI(); updateReward();
 </script>
 </body>
 </html>

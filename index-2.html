@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>খাও আমির! 🍽️</title>
+
+<!-- MediaPipe FaceMesh -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Baloo+2:wght@700;800&display=swap');
+
+:root {
+  --orange: #FF6B35;
+  --yellow: #FFD166;
+  --green:  #06D6A0;
+  --red:    #EF476F;
+  --blue:   #118AB2;
+  --bg:     #FFF8F0;
+  --card:   #FFFFFF;
+  --text:   #2D2D2D;
+  --muted:  #aaa;
+  --border: #F0E8E0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hind Siliguri', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+}
+header {
+  width: 100%;
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  padding: 16px 20px 13px; text-align: center;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.3);
+}
+header h1 {
+  font-family: 'Baloo 2', cursive; font-size: 1.75rem; font-weight: 800;
+  color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+header p { color: rgba(255,255,255,0.85); font-size: 0.82rem; margin-top: 2px; font-weight: 600; }
+
+.main { width: 100%; max-width: 480px; padding: 14px 12px 24px; display: flex; flex-direction: column; gap: 13px; }
+
+.camera-wrap {
+  position: relative; border-radius: 22px; overflow: hidden;
+  background: #111; aspect-ratio: 4/3;
+  border: 3px solid var(--orange); box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+}
+#video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+#faceCanvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; transform: scaleX(-1);
+}
+.cam-overlay {
+  position: absolute; inset: 0; background: rgba(20,20,40,0.88);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; color: #fff; text-align: center; padding: 20px; z-index: 10;
+}
+.cam-overlay .big { font-size: 3.2rem; }
+.cam-overlay p { font-size: 0.95rem; font-weight: 600; opacity: 0.9; line-height: 1.4; }
+
+.face-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,0.55); border-radius: 10px; padding: 4px 10px;
+  font-size: 0.72rem; font-weight: 700; color: #fff;
+  display: none; z-index: 8; gap: 5px; align-items: center;
+  backdrop-filter: blur(4px);
+}
+.face-badge.show { display: flex; }
+.face-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.face-dot.found { background: var(--green); animation: blink 1.2s infinite; }
+.face-dot.lost  { background: var(--red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.mouth-card {
+  background: var(--card); border-radius: 16px; padding: 13px 18px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06); border: 2px solid var(--border);
+}
+.mouth-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+.mouth-header span { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; }
+.mouth-header .mval { color: var(--orange); font-size: 0.85rem; font-weight: 800; }
+.mouth-track { height: 12px; background: #f0e8e0; border-radius: 99px; overflow: hidden; position: relative; }
+.mouth-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--blue), var(--green), var(--yellow), var(--red)); width: 0%; transition: width 0.15s ease; }
+.mouth-thresh-line { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(0,0,0,0.3); pointer-events: none; }
+.mouth-labels { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+
+.status-bar {
+  background: var(--card); border-radius: 16px; padding: 13px 18px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06); border: 2px solid var(--border);
+}
+.sdot { width: 16px; height: 16px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
+.sdot.active { background: var(--green); animation: pg 1.5s infinite; }
+.sdot.warn   { background: var(--yellow); animation: py 1s infinite; }
+.sdot.alert  { background: var(--red); animation: pr 0.7s infinite; }
+@keyframes pg { 0%,100%{box-shadow:0 0 0 3px rgba(6,214,160,0.15)} 50%{box-shadow:0 0 0 7px rgba(6,214,160,0.25)} }
+@keyframes py { 0%,100%{box-shadow:0 0 0 3px rgba(255,209,102,0.15)} 50%{box-shadow:0 0 0 7px rgba(255,209,102,0.25)} }
+@keyframes pr { 0%,100%{box-shadow:0 0 0 3px rgba(239,71,111,0.15)} 50%{box-shadow:0 0 0 7px rgba(239,71,111,0.25)} }
+.sinfo { flex: 1; }
+.sinfo .slabel { font-size: 0.73rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; }
+.sinfo .sval   { font-size: 1rem; font-weight: 700; color: var(--text); margin-top: 2px; }
+
+.reminder-banner {
+  background: linear-gradient(135deg, #EF476F, #ff6b8a);
+  border-radius: 18px; padding: 16px 20px; text-align: center;
+  color: #fff; box-shadow: 0 6px 22px rgba(239,71,111,0.4); display: none;
+}
+.reminder-banner.show { display: block; animation: shakeBanner 0.45s ease; }
+@keyframes shakeBanner {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)}
+  40%{transform:translateX(9px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+}
+.rem-emoji { font-size: 2rem; display: block; margin-bottom: 5px; }
+.rem-bn { font-family: 'Hind Siliguri', sans-serif; font-size: 1.2rem; font-weight: 700; line-height: 1.4; }
+.rem-sub { font-size: 0.8rem; opacity: 0.88; margin-top: 5px; }
+
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+.stat-box {
+  background: var(--card); border-radius: 14px; padding: 11px 8px;
+  text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 2px solid var(--border);
+}
+.stat-box .snum { font-family: 'Baloo 2', cursive; font-size: 1.55rem; font-weight: 800; color: var(--orange); line-height: 1; }
+.stat-box .slbl { font-size: 0.68rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+.settings-card {
+  background: var(--card); border-radius: 16px; padding: 16px 18px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06); border: 2px solid var(--border);
+}
+.settings-card h3 { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 800; color: var(--orange); margin-bottom: 13px; }
+.srow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+.srow:last-child { margin-bottom: 0; }
+.srow label { font-size: 0.88rem; font-weight: 700; flex: 1; }
+.srow .shint { font-size: 0.72rem; color: var(--muted); display: block; font-weight: 400; margin-top: 1px; }
+.srow input[type="range"] { width: 105px; accent-color: var(--orange); }
+.srow .sval { font-size: 0.82rem; font-weight: 800; color: var(--orange); min-width: 34px; text-align: right; }
+.srow input[type="text"] {
+  border: 2px solid var(--border); border-radius: 9px; padding: 5px 9px;
+  font-family: 'Hind Siliguri', sans-serif; font-size: 0.88rem; font-weight: 700;
+  color: var(--text); width: 155px; outline: none; transition: border 0.2s;
+}
+.srow input[type="text"]:focus { border-color: var(--orange); }
+
+.btn-row { display: flex; gap: 9px; }
+.btn {
+  flex: 1; padding: 13px; border: none; border-radius: 13px;
+  font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 800;
+  cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn:active { transform: scale(0.96); }
+.btn-start { background: linear-gradient(135deg, var(--green), #04bf8f); color: #fff; box-shadow: 0 4px 16px rgba(6,214,160,0.3); }
+.btn-stop  { background: linear-gradient(135deg, var(--red), #e0305a); color: #fff; box-shadow: 0 4px 16px rgba(239,71,111,0.3); display: none; }
+.btn-test  { background: linear-gradient(135deg, var(--yellow), #ffbb00); color: #5a3e00; box-shadow: 0 4px 16px rgba(255,209,102,0.25); }
+
+footer { text-align: center; color: var(--muted); font-size: 0.72rem; padding: 6px 20px 20px; font-weight: 600; }
+footer span { color: var(--orange); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍽️ খাও আমির! খাও!</h1>
+  <p>মুখের নড়াচড়া ট্র্যাক করে বাংলায় রিমাইন্ড করে</p>
+</header>
+
+<div class="main">
+
+  <div class="camera-wrap">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="faceCanvas"></canvas>
+    <div class="cam-overlay" id="overlay">
+      <div class="big">📷</div>
+      <p>শুরু করতে নিচের<br><strong>▶ শুরু</strong> বোতামে চাপুন</p>
+    </div>
+    <div class="face-badge" id="faceBadge">
+      <div class="face-dot" id="faceDot"></div>
+      <span id="faceLabel">মুখ খুঁজছি...</span>
+    </div>
+  </div>
+
+  <div class="mouth-card">
+    <div class="mouth-header">
+      <span>মুখের খোলার পরিমাণ (MAR)</span>
+      <span class="mval" id="mouthPct">0%</span>
+    </div>
+    <div class="mouth-track">
+      <div class="mouth-fill" id="mouthFill"></div>
+      <div class="mouth-thresh-line" id="threshLine" style="left:25%"></div>
+    </div>
+    <div class="mouth-labels"><span>বন্ধ</span><span>↑ সীমা</span><span>চিবানো ✓</span></div>
+  </div>
+
+  <div class="status-bar">
+    <div class="sdot" id="sdot"></div>
+    <div class="sinfo">
+      <div class="slabel">অবস্থা</div>
+      <div class="sval" id="sval">শুরু হয়নি</div>
+    </div>
+    <div style="font-size:1.5rem" id="moodEmoji">😴</div>
+  </div>
+
+  <div class="reminder-banner" id="reminderBanner">
+    <span class="rem-emoji" id="remEmoji">🍽️</span>
+    <div class="rem-bn" id="remText">খাও আমির আবদুল্লাহ!</div>
+    <div class="rem-sub" id="remSub">চিবাতে ভুলে গেছ?</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="snum" id="stRem">0</div><div class="slbl">রিমাইন্ডার</div></div>
+    <div class="stat-box"><div class="snum" id="stPause">0s</div><div class="slbl">থামা সময়</div></div>
+    <div class="stat-box"><div class="snum" id="stSess">0m</div><div class="slbl">সেশন</div></div>
+  </div>
+
+  <div class="settings-card">
+    <h3>⚙️ সেটিংস</h3>
+    <div class="srow">
+      <label>শিশুর নাম<span class="shint">ভয়েসে ব্যবহার হবে</span></label>
+      <input type="text" id="childName" value="আমির আবদুল্লাহ" maxlength="40">
+    </div>
+    <div class="srow">
+      <label>থামার সীমা<span class="shint">কত সেকেন্ড থামলে রিমাইন্ড হবে</span></label>
+      <input type="range" id="pauseThresh" min="3" max="20" value="6" oninput="updateThreshUI()">
+      <span class="sval" id="pauseVal">6s</span>
+    </div>
+    <div class="srow">
+      <label>মুখ সংবেদনশীলতা<span class="shint">ছোট নড়াচড়া বাদ দেবে</span></label>
+      <input type="range" id="mouthSens" min="5" max="45" value="18" oninput="updateSensUI()">
+      <span class="sval" id="sensVal">18%</span>
+    </div>
+    <div class="srow">
+      <label>ভয়েস ভলিউম<span class="shint">আওয়াজের মাত্রা</span></label>
+      <input type="range" id="voiceVol" min="1" max="10" value="10" oninput="document.getElementById('volVal').textContent=this.value">
+      <span class="sval" id="volVal">10</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-start" id="btnStart" onclick="startMonitoring()">▶ শুরু</button>
+    <button class="btn btn-stop"  id="btnStop"  onclick="stopMonitoring()">⏹ থামাও</button>
+    <button class="btn btn-test"               onclick="testVoice()">🔊 টেস্ট</button>
+  </div>
+
+</div>
+
+<footer>❤️ তৈরি <span>আমির আবদুল্লাহ</span>-র জন্য — ভালো খাও, সুস্থ থাকো!</footer>
+
+<script>
+// ============================================================
+// BANGLA DYNAMIC REMINDER SENTENCES — 20 varied phrases
+// ============================================================
+function getBanglaReminder(name, pauseSecs, count) {
+  const sets = [
+    [`${name}, খাচ্ছ না কেন? চামচ তুলো!`,
+     `ওই যে তোমার খাবার ঠান্ডা হয়ে যাচ্ছে!`, "🍛"],
+
+    [`${name}! এখনই একটা বড় কামড় দাও!`,
+     `মা রান্না করেছেন এত কষ্ট করে, নষ্ট করো না!`, "🥄"],
+
+    [`আরে ${name}! মুখে দাও, চিবাও!`,
+     `থেমে গেলে চলবে না, খাওয়া শেষ করো!`, "😋"],
+
+    [`${name} বাবু! খাওয়া শেষ করো আগে!`,
+     `খেলে শক্তি পাবে, লম্বা হবে, বুদ্ধি বাড়বে!`, "💪"],
+
+    [`ওহে ${name}! আবার ভুলে গেলে নাকি?`,
+     `চলো চলো, এক চামচ মুখে দাও এখনই!`, "🍽️"],
+
+    [`${name}! পুরো ${pauseSecs} সেকেন্ড থেমে আছ!`,
+     `আস্তে হলেও চলবে, কিন্তু থামলে একদম চলবে না!`, "⏰"],
+
+    [`হ্যালো ${name}? খাবার কিন্তু ডাকছে!`,
+     `তোমার পেট কিন্তু এখনও খালি আছে, মনে রেখো!`, "🔔"],
+
+    [`${name} সোনামণি! এক গ্রাস খাও তো!`,
+     `চাবানো শেষ হয়েছে? আরেকটু নাও পাতে!`, "🌟"],
+
+    [`উঠে পড়ো ${name}! মানে খাওয়ায় মনোযোগ দাও!`,
+     `এখন ভালো করে খেলে পরে মিষ্টি পাবে কিন্তু!`, "🍬"],
+
+    [`${name}! এটা ${count} নম্বর রিমাইন্ডার!`,
+     `আর থামা চলবে না, মনোযোগ দিয়ে চিবাও!`, "👀"],
+
+    [`আমির, খাবার খাও, নইলে বড় হবে না!`,
+     `প্রতিটা গ্রাস ভালো করে চিবিয়ে খেতে হয়!`, "🌱"],
+
+    [`এই ${name}, চোখ রাখো খাবারের দিকে!`,
+     `অন্যমনস্ক না হয়ে খাওয়ায় মন দাও!`, "👁️"],
+
+    [`${name} বাবা, পেট ভরাও আগে!`,
+     `খাবার এত সুন্দর রান্না, সব শেষ করতে হবে!`, "🍲"],
+
+    [`এক কামড়, দুই কামড়, ${name} কামড় দাও!`,
+     `এভাবে একটু একটু করে পুরো খাবার শেষ হবে!`, "🎵"],
+
+    [`${name}, মুখ খোলো! চিবাও! গিলো! আবার!`,
+     `এটাই খাওয়ার নিয়ম, থামলে চলবে না!`, "🔄"],
+
+    [`সোনা ${name}, আর মাত্র কয়েক চামচ!`,
+     `শেষ করলেই খেলতে যেতে পারবে!`, "⚽"],
+
+    [`${name} আমার! খাবার কি ভালো লাগছে না?`,
+     `যাই হোক, পেট ভরাতে হবে, খেতে থাকো!`, "😊"],
+
+    [`ওরে ${name}! এত ধীরে কেন আজ?`,
+     `একটু জোরে চিবাও, তাড়াতাড়ি শেষ হবে!`, "🏃"],
+
+    [`${name}, দেখো আমি তোমাকে দেখছি!`,
+     `ক্যামেরা বলছে তুমি ${pauseSecs} সেকেন্ড থেমে আছ!`, "📷"],
+
+    [`জলদি করো ${name}, খাবার ঠান্ডা হচ্ছে!`,
+     `গরম গরম খাওয়াই ভালো, এখনই খাও!`, "🔥"],
+  ];
+  return sets[Math.floor(Math.random() * sets.length)];
+}
+
+// ============================================================
+// MOUTH LANDMARK INDICES (MediaPipe 468-point)
+// ============================================================
+const MOUTH_TOP    = 13;
+const MOUTH_BOTTOM = 14;
+const MOUTH_LEFT   = 61;
+const MOUTH_RIGHT  = 291;
+
+// Outer lip loop for drawing
+const OUTER_LIPS = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146,61];
+const INNER_LIPS = [78,191,80,81,82,13,312,311,310,415,308,324,318,402,317,14,87,178,88,95,78];
+
+// ============================================================
+// STATE
+// ============================================================
+let faceMesh     = null;
+let mpCamera     = null;
+let stream       = null;
+let isRunning    = false;
+
+// Smoothing
+let marHistory   = [];
+const SMOOTH_N   = 8;   // frames to average
+// Noise floor: changes below this MAR delta are ignored
+const MAR_NOISE  = 0.01;
+let lastStableMAR = 0;
+
+let pauseStart     = null;
+let lastReminderAt = 0;
+let reminderCount  = 0;
+let sessionSecs    = 0;
+let sessionTimer   = null;
+let speaking       = false;
+
+const video      = document.getElementById('video');
+const faceCanvas = document.getElementById('faceCanvas');
+const fctx       = faceCanvas.getContext('2d');
+
+// ============================================================
+// MOUTH ASPECT RATIO
+// ============================================================
+function getMAR(lm) {
+  const top    = lm[MOUTH_TOP];
+  const bottom = lm[MOUTH_BOTTOM];
+  const left   = lm[MOUTH_LEFT];
+  const right  = lm[MOUTH_RIGHT];
+  const vert   = Math.hypot(bottom.x - top.x,   bottom.y - top.y);
+  const horiz  = Math.hypot(right.x  - left.x,  right.y  - left.y);
+  return horiz > 0.001 ? vert / horiz : 0;
+}
+
+// ============================================================
+// SMOOTH + DISCARD TINY NOISE
+// ============================================================
+function smoothedMAR(raw) {
+  marHistory.push(raw);
+  if (marHistory.length > SMOOTH_N) marHistory.shift();
+  const avg = marHistory.reduce((a, b) => a + b, 0) / marHistory.length;
+  // Hysteresis: only update stable reading if delta is significant
+  if (Math.abs(avg - lastStableMAR) > MAR_NOISE) {
+    lastStableMAR = avg;
+  }
+  return lastStableMAR;
+}
+
+// ============================================================
+// DRAW MOUTH OVERLAY
+// ============================================================
+function drawMouth(lm, W, H, mar, isChewing) {
+  faceCanvas.width  = W;
+  faceCanvas.height = H;
+  fctx.clearRect(0, 0, W, H);
+
+  const color = isChewing ? '#06D6A0' : '#EF476F';
+  const fill  = isChewing ? 'rgba(6,214,160,0.18)' : 'rgba(239,71,111,0.15)';
+
+  // Outer lips
+  fctx.beginPath();
+  OUTER_LIPS.forEach((idx, i) => {
+    const p = lm[idx]; if (!p) return;
+    i === 0 ? fctx.moveTo(p.x * W, p.y * H) : fctx.lineTo(p.x * W, p.y * H);
+  });
+  fctx.closePath();
+  fctx.fillStyle   = fill;
+  fctx.strokeStyle = color;
+  fctx.lineWidth   = 2;
+  fctx.fill();
+  fctx.stroke();
+
+  // Inner lips
+  fctx.beginPath();
+  INNER_LIPS.forEach((idx, i) => {
+    const p = lm[idx]; if (!p) return;
+    i === 0 ? fctx.moveTo(p.x * W, p.y * H) : fctx.lineTo(p.x * W, p.y * H);
+  });
+  fctx.closePath();
+  fctx.strokeStyle = color;
+  fctx.lineWidth   = 1.5;
+  fctx.stroke();
+
+  // Corner & top/bottom dots
+  [MOUTH_TOP, MOUTH_BOTTOM, MOUTH_LEFT, MOUTH_RIGHT].forEach(idx => {
+    const p = lm[idx]; if (!p) return;
+    fctx.beginPath();
+    fctx.arc(p.x * W, p.y * H, 4, 0, Math.PI * 2);
+    fctx.fillStyle   = '#fff';
+    fctx.strokeStyle = color;
+    fctx.lineWidth   = 2;
+    fctx.fill(); fctx.stroke();
+  });
+
+  // MAR label near mouth
+  const midX = lm[MOUTH_BOTTOM] ? lm[MOUTH_BOTTOM].x * W : W / 2;
+  const midY = lm[MOUTH_BOTTOM] ? lm[MOUTH_BOTTOM].y * H + 18 : H / 2;
+  fctx.font      = 'bold 11px sans-serif';
+  fctx.fillStyle = color;
+  fctx.textAlign = 'center';
+  fctx.fillText(`MAR: ${(mar * 100).toFixed(0)}%`, midX, midY);
+}
+
+// ============================================================
+// BANGLA VOICE
+// ============================================================
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  speaking = true;
+  const vol = parseFloat(document.getElementById('voiceVol').value) / 10;
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.volume = vol;
+  utt.rate   = 0.85;
+  utt.pitch  = 1.1;
+
+  const voices = window.speechSynthesis.getVoices();
+  // Preference order: bn-BD > bn-IN > bn > hi (closest fallback)
+  const preferred = voices.find(v => v.lang === 'bn-BD') ||
+                    voices.find(v => v.lang === 'bn-IN') ||
+                    voices.find(v => v.lang.startsWith('bn')) ||
+                    voices.find(v => v.lang.startsWith('hi')) ||
+                    null;
+  if (preferred) { utt.voice = preferred; utt.lang = preferred.lang; }
+  else { utt.lang = 'bn-BD'; }
+
+  utt.onend   = () => { speaking = false; };
+  utt.onerror = () => { speaking = false; };
+  window.speechSynthesis.speak(utt);
+}
+
+function testVoice() {
+  const name    = document.getElementById('childName').value.trim() || 'আমির';
+  const [m, s]  = getBanglaReminder(name, 5, 1);
+  speak(m + ' ' + s);
+}
+
+// ============================================================
+// UI
+// ============================================================
+function setStatus(cls, text, emoji) {
+  document.getElementById('sdot').className     = 'sdot ' + (cls || '');
+  document.getElementById('sval').textContent   = text;
+  document.getElementById('moodEmoji').textContent = emoji;
+}
+
+function setFaceBadge(found) {
+  document.getElementById('faceBadge').classList.add('show');
+  document.getElementById('faceDot').className   = 'face-dot ' + (found ? 'found' : 'lost');
+  document.getElementById('faceLabel').textContent = found ? 'মুখ পাওয়া গেছে ✓' : 'মুখ দেখা যাচ্ছে না';
+}
+
+function showReminder(main, sub, emoji) {
+  document.getElementById('remEmoji').textContent = emoji;
+  document.getElementById('remText').textContent  = main;
+  document.getElementById('remSub').textContent   = sub;
+  const b = document.getElementById('reminderBanner');
+  b.classList.remove('show');
+  void b.offsetWidth;
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 6000);
+}
+
+function updateMouthBar(mar) {
+  const pct = Math.min(100, mar * 100 * 2.5); // scale 0..0.4 → 0..100%
+  document.getElementById('mouthFill').style.width = pct + '%';
+  document.getElementById('mouthPct').textContent  = (mar * 100).toFixed(1) + '%';
+}
+
+function updateStats(pauseSecs) {
+  document.getElementById('stRem').textContent   = reminderCount;
+  document.getElementById('stPause').textContent = pauseSecs > 0 ? pauseSecs + 's' : '0s';
+  document.getElementById('stSess').textContent  = Math.floor(sessionSecs / 60) + 'm';
+}
+
+function updateThreshUI() {
+  document.getElementById('pauseVal').textContent = document.getElementById('pauseThresh').value + 's';
+}
+
+function updateSensUI() {
+  const v = parseInt(document.getElementById('mouthSens').value);
+  document.getElementById('sensVal').textContent = v + '%';
+  // The threshold line maps: sens 5-45 → position on bar
+  // bar shows MAR*100*2.5 scale, so sens% on bar = (sens/100 * 100 * 2.5) = sens*2.5 capped 100
+  const barPct = Math.min(100, v * 2.5);
+  document.getElementById('threshLine').style.left = barPct + '%';
+}
+
+// ============================================================
+// FACE MESH CALLBACK
+// ============================================================
+function onFaceResults(results) {
+  if (!isRunning) return;
+
+  const W = video.videoWidth  || 640;
+  const H = video.videoHeight || 480;
+
+  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+    setFaceBadge(false);
+    faceCanvas.width = W; faceCanvas.height = H;
+    fctx.clearRect(0, 0, W, H);
+    setStatus('warn', 'মুখ দেখা যাচ্ছে না — কাছে আসো', '🔍');
+    pauseStart = null;
+    return;
+  }
+
+  setFaceBadge(true);
+  const lm  = results.multiFaceLandmarks[0];
+  const raw = getMAR(lm);
+  const mar = smoothedMAR(raw);       // noise-filtered stable value
+
+  const sensRaw  = parseInt(document.getElementById('mouthSens').value);
+  const sensMAR  = sensRaw / 100;     // convert % to MAR scale
+  const isChewing = mar >= sensMAR;
+
+  drawMouth(lm, W, H, mar, isChewing);
+  updateMouthBar(mar);
+
+  const thresh = parseInt(document.getElementById('pauseThresh').value);
+
+  if (isChewing) {
+    pauseStart = null;
+    setStatus('active', 'চিবানো হচ্ছে 😋', '😋');
+    updateStats(0);
+  } else {
+    if (!pauseStart) pauseStart = Date.now();
+    const pausedSecs = Math.floor((Date.now() - pauseStart) / 1000);
+    setStatus('warn', `${pausedSecs}s ধরে মুখ বন্ধ`, '😐');
+    updateStats(pausedSecs);
+
+    if (pausedSecs >= thresh) {
+      const now      = Date.now();
+      const cooldown = 10000;
+      if (now - lastReminderAt > cooldown) {
+        lastReminderAt = now;
+        reminderCount++;
+        const name      = document.getElementById('childName').value.trim() || 'আমির';
+        const [m, s, e] = getBanglaReminder(name, pausedSecs, reminderCount);
+        speak(m + ' ' + s);
+        showReminder(m, s, e);
+        setStatus('alert', `রিমাইন্ড দেওয়া হলো! (${reminderCount}×)`, '🔔');
+      }
+    }
+  }
+}
+
+// ============================================================
+// START / STOP
+// ============================================================
+async function startMonitoring() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+
+    document.getElementById('overlay').style.display  = 'none';
+    document.getElementById('btnStart').style.display = 'none';
+    document.getElementById('btnStop').style.display  = 'flex';
+
+    isRunning = true; pauseStart = null; reminderCount = 0;
+    sessionSecs = 0; marHistory = []; lastStableMAR = 0;
+
+    faceMesh = new FaceMesh({
+      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+    });
+    faceMesh.setOptions({
+      maxNumFaces: 1, refineLandmarks: true,
+      minDetectionConfidence: 0.65, minTrackingConfidence: 0.65
+    });
+    faceMesh.onResults(onFaceResults);
+
+    mpCamera = new Camera(video, {
+      onFrame: async () => { if (isRunning && faceMesh) await faceMesh.send({ image: video }); },
+      width: 640, height: 480
+    });
+    mpCamera.start();
+
+    sessionTimer = setInterval(() => {
+      sessionSecs++;
+      updateStats(pauseStart ? Math.floor((Date.now() - pauseStart) / 1000) : 0);
+    }, 1000);
+
+    setStatus('active', 'মনিটরিং চলছে...', '👀');
+    const name = document.getElementById('childName').value.trim() || 'আমির';
+    setTimeout(() => speak(`ঠিক আছে! ${name}, আমি এখন তোমাকে দেখছি। ভালো করে চিবিয়ে খাও!`), 800);
+
+  } catch (err) {
+    alert('ক্যামেরার অনুমতি দরকার!\n\nঅনুগ্রহ করে ক্যামেরা অ্যাক্সেস দিন।\n\n' + err.message);
+  }
+}
+
+function stopMonitoring() {
+  isRunning = false;
+  if (mpCamera)  { mpCamera.stop();  mpCamera  = null; }
+  if (faceMesh)  { faceMesh.close(); faceMesh  = null; }
+  if (stream)    { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  clearInterval(sessionTimer);
+  video.srcObject = null;
+  fctx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+  document.getElementById('overlay').style.display  = 'flex';
+  document.getElementById('btnStart').style.display = 'flex';
+  document.getElementById('btnStop').style.display  = 'none';
+  document.getElementById('faceBadge').classList.remove('show');
+  document.getElementById('reminderBanner').classList.remove('show');
+  setStatus('', 'থামানো হয়েছে', '😴');
+  updateMouthBar(0);
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+// Pre-load voices
+window.speechSynthesis && window.speechSynthesis.getVoices();
+window.speechSynthesis && (window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices());
+
+// Init UI
+updateThreshUI(); updateSensUI();
+</script>
+</body>
+</html>
